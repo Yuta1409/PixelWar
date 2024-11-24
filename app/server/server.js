@@ -13,12 +13,20 @@ wss.on('connection', (ws) => {
 
     ws.on('message', (message) => {
         const { action, data, id } = JSON.parse(message);
-        console.log(action, data, id)
+        console.log(action, data, id);
+
         if (action === 'draw') {
             pixels[data.id] = data;
             wss.clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({action,data}));
+                    client.send(JSON.stringify({ action, data }));
+                }
+            });
+        } else if (action === 'CLIENT_MSG') {
+            console.log(data);
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ action: 'SERVER_MSG', data }));
                 }
             });
         }
