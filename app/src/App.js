@@ -17,11 +17,17 @@ function App() {
         }
     }, []);
 
-    const handleLogin = (username) => {
+    const loginUser = (username) => {
         localStorage.setItem('username', username);
         setUsername(username);
         setIsLoggedIn(true);
     };
+
+    const logoutUser = (username) => {
+        localStorage.removeItem('username');
+        setUsername('');
+        setIsLoggedIn(false);
+    }
 
     return (
         <div className="App">
@@ -41,9 +47,13 @@ function App() {
                         <div>
                             <Chat username={username} />
                         </div>
+                        <button onClick={logoutUser}
+                            className="mt-4 p-2 bg-red-500 text-white rounded">
+                            Déconnexion
+                        </button>
                     </>
                 ) : (
-                    <Login onLogin={handleLogin} />
+                    <Login onLogin={loginUser} />
                 )}
             </header>
         </div>

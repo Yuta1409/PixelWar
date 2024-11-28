@@ -1,22 +1,36 @@
 import React, { useState, useEffect } from "react";
 
-const socket = new WebSocket('ws://localhost:8080');
-
 const Chat = ({ username }) => {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
+    const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        socket.onmessage = (event) => {
+        const newSocket = new WebSocket('ws://localhost:8080');
+        setSocket(newSocket);
+
+        newSocket.onopen = () => {
+            console.log("Connexion WebSocket ouverte");
+        };
+
+        newSocket.onmessage = (event) => {
             const msg = JSON.parse(event.data);
             if (msg.action === 'SERVER_MSG') {
-                console.log(msg.data);
+                console.log("Message reçu du serveur :", msg.data);
                 setNewMessage(msg.data);
             }
         };
 
+        newSocket.onclose = () => {
+            console.log("Connexion WebSocket fermée");
+        };
+
+        newSocket.onerror = (error) => {
+            console.error("Erreur WebSocket :", error);
+        };
+
         return () => {
-            socket.close();
+            newSocket.close();
         };
     }, []);
 
@@ -33,9 +47,13 @@ const Chat = ({ username }) => {
             username,
             text
         };
-        console.log(msg);
-        socket.send(JSON.stringify({ action: 'CLIENT_MSG', data: msg }));
-        setText('');
+        console.log("Envoi du message au serveur :", msg);
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ action: 'CLIENT_MSG', data: msg }));
+            setText('');
+        } else {
+            console.error("La connexion WebSocket n'est pas ouverte");
+        }
     }
 
     return (
@@ -44,11 +62,11 @@ const Chat = ({ username }) => {
                 <div className="col-4">
                     <div className="card">
                         <div className="card-body">
-                            <div className="card-title">My first chat</div>
+                            <div className="card-title">Discussion</div>
                             <hr/>
                             <div className="messages">
                                 {messages.map((msg, index) => (
-                                    <div key={index}>{msg.username}: {msg.text}</div>
+                                    <div key={index}>{msg.username} : {msg.text}</div>
                                 ))}
                             </div>
                         </div>
@@ -57,14 +75,14 @@ const Chat = ({ username }) => {
                                 <input
                                     id="text"
                                     type="text"
-                                    placeholder=""
+                                    placeholder="Votre message"
                                     className="form-control"
                                     value={text}
                                     onChange={(e) => setText(e.target.value)}
                                 />
                                 <br/>
                                 <button type="submit" className="btn btn-primary form-control">
-                                    Envoyer
+                                    envoyer
                                 </button>
                             </div>
                         </form>

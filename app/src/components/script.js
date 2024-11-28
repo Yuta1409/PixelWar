@@ -16,10 +16,16 @@ const CanvasComponent = ({ color }) => {
             if (action === 'draw') {
                 ctx.fillStyle = data.color;
                 ctx.fillRect(data.x, data.y, 10, 10);
+            } else if (action === 'erase') {
+                ctx.clearRect(data.x, data.y, 10, 10);
             } else if (action === 'init') {
                 Object.values(data).forEach(p => {
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(p.x, p.y, 10, 10);
+                    if (p.color) {
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, 10, 10);
+                    } else {
+                        ctx.clearRect(p.x, p.y, 10, 10);
+                    }
                 });
             }
         };
@@ -43,7 +49,22 @@ const CanvasComponent = ({ color }) => {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         const id = `${x},${y}`;
-        const pixelData = { action: 'draw', data: { id, x, y, color }, id: pageId }; // Utiliser la couleur passée en prop
+        const pixelData = { action: 'draw', data: { id, x, y, color }, id: pageId };
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(pixelData));
+        } else {
+            console.error('WebSocket is not open: ', ws.readyState);
+        }
+    };
+
+    const handleErase = (event) => {
+        event.preventDefault();
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const id = `${x},${y}`;
+        const pixelData = { action: 'erase', data: { id, x, y }, id: pageId };
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(pixelData));
         } else {
@@ -58,6 +79,7 @@ const CanvasComponent = ({ color }) => {
             width={800}
             height={600}
             onClick={handleCanvasClick}
+            onContextMenu={handleErase} // Utiliser le clic droit pour effacer
         />
     );
 };
